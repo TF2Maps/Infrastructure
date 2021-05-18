@@ -1,16 +1,3 @@
-/*
-    Gameserver Region
-
-*/
-variable "vpc_cidr" {
-    type = string
-}
-
-data "aws_region" "current" {}
-data "aws_availability_zones" "available" {
-    state = "available"
-}
-
 locals {
     subnets = {
         for i, v in data.aws_availability_zones.available.names :
@@ -91,4 +78,8 @@ resource "aws_network_acl" "this" {
 
 output "subnets" {
     value = local.subnets
+}
+
+output "vpc_id" {
+    value = aws_vpc.this.id
 }
