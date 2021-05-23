@@ -1,7 +1,7 @@
 locals {
     userdata = <<EOF
 #!/bin/bash -v
-/usr/bin/python3.6 /opt/startup.py
+/usr/bin/python3.8 /opt/startup.py
 EOF
 
     security_group_ids = concat(
@@ -21,6 +21,11 @@ data "aws_ami" "tf2_competitive" {
     }
 
     owners = ["${data.aws_caller_identity.current.account_id}"]
+}
+
+resource "aws_key_pair" "bastion" {
+    key_name = "bastion"
+    public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCGX6FT1sVg+Dm5aaWbOYOMLRDUeuEd4qBg8YZyWOacECMsuXo3Z5n3jEjzrXciCrlu0Y0lrzMAgCG85mKsCg/JDfU9RUaAG6Z7dL1wS1FF93+Ilk+oP/5Sq8UDb9b4S+rpqSXrWrPwjqn4GwyRmB9Up6CKJ5fF5os8YTcnz8bKg/G3JsS1dH7a/8CF5YvKKtJeA5ZdMpnnEMN/nPGTaPyhnR8igHKXPMYGkJ1wkeqjz3By6cff7wxhjjejC9X6D0H0XC0F/um0CFPg13CIkAHHc5Zr7oq5lTe5YEnwPyPPMlXIfzE7UpnvzAQNFvxl9BaNULEnj8FtB/85rrm9cprt"
 }
 
 resource "aws_launch_template" "tf2_competitive" {

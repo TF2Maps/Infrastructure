@@ -58,20 +58,20 @@ resource "aws_network_acl" "this" {
     subnet_ids = [ for i in aws_subnet.this: i.id ]
 
     ingress {
-        protocol = "tcp"
+        protocol = -1
         rule_no = 999
         action = "allow"
         cidr_block = "0.0.0.0/0"
         from_port = 0
-        to_port = 65535
+        to_port = 0
     }
     egress {
-        protocol = "tcp"
+        protocol = -1
         rule_no = 999
         action = "allow"
         cidr_block = "0.0.0.0/0"
         from_port = 0
-        to_port = 65535
+        to_port = 0
     }
 }
 
