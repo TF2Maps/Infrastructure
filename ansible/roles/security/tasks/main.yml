@@ -1,0 +1,68 @@
+---
+
+- name: Secure root homedir
+  file:
+    path: /root
+    owner: root
+    group: root
+    mode: 0750
+    state: directory
+
+- name: Install security apps
+  apt:
+    name: "{{ packages }}"
+    state: latest
+  vars:
+    packages:
+    - ufw
+    - fail2ban
+    - sysstat
+
+- name: Copy SSH configuration
+  copy:
+    src: files/etc/ssh/sshd_config
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: 0600
+
+- name: Configure motd banner
+  copy:
+    src: files/etc/motd
+    dest: /etc/motd
+    mode: 0644
+    owner: root
+    group: root
+
+- name: Remove second motd
+  lineinfile:
+    dest: /etc/pam.d/sshd
+    regexp: '^session\ +optional\ +pam_motd.so\ +noupdate'
+    state: absent
+
+- name: Disable insecure sysctl settings
+  sysctl:
+    name: "{{ item }}"
+    value: "0"
+    state: present
+    ignoreerrors: yes
+  with_items:
+    - kernel.sysrq
+    - net.ipv4.conf.all.forwarding
+    - net.ipv6.conf.all.accept_redirects
+    - net.ipv4.conf.all.send_redirects
+    - net.ipv4.conf.all.accept_redirects
+    - net.ipv4.conf.default.accept_redirects
+    - net.ipv6.conf.default.accept_redirects
+    - net.ipv4.tcp_timestamps
+
+- name: Enable secure sysctl settings
+  sysctl:
+    name: "{{ item }}"
+    value: "1"
+    state: present
+    ignoreerrors: yes
+  with_items:
+    - kernel.kptr_restrict  1
+    - net.ipv4.conf.all.log_martians  1
+    - net.ipv4.conf.default.log_martians  1

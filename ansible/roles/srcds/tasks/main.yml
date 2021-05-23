@@ -1,0 +1,103 @@
+---
+
+- name: "Create {{ srcds_user }} user"
+  user:
+    name: "{{ srcds_user }}"
+    state: present
+
+# This is needed by srcds to store cache files in the user's home dir
+- name: "{{ srcds_user }} home permissions"
+  file:
+    path: "/home/{{ srcds_user }}/"
+    state: directory
+    owner: "{{ srcds_user }}"
+    group: "{{ srcds_user }}"
+
+- name: Create srcds root dir {{ srcds_root_dir }}
+  file:
+    path: "{{ srcds_root_dir }}"
+    state: directory
+    owner: "{{ srcds_user }}"
+    group: "{{ srcds_user }}"
+
+- name: Set architecture
+  shell: dpkg --add-architecture i386; apt-get update
+
+- name: Install steamcmd prereq's
+  apt:
+    name: "{{ packages }}"
+    state: latest
+  vars:
+    packages:
+    - lib32gcc1
+    - lib32tinfo5
+    - libstdc++6
+    - libstdc++6:i386
+    - libcurl4-openssl-dev
+    - libtcmalloc-minimal4:i386
+    - sqlite3
+    - gdb
+    - util-linux
+    - ca-certificates
+    - binutils
+    - bc
+    - tmux
+    - jq
+
+# not sure why but this must be put on a second step, else it fails to install and silently errors
+- name: Install steamcmd prereq's
+  apt:
+    name: "libcurl4-gnutls-dev:i386"
+    state: latest
+
+- name: Download steamcmd from Valve
+  unarchive:
+    src: http://media.steampowered.com/client/steamcmd_linux.tar.gz
+    dest: "{{ srcds_root_dir }}"
+    copy: no
+    owner: "{{ srcds_user }}"
+    group: "{{ srcds_user }}"
+
+- name: Set {{ srcds_root_dir }} to be owned by {{ srcds_user }}
+  command: "chown -R {{ srcds_user }}:{{ srcds_user }}  {{ srcds_root_dir }}"
+
+- name: Install TF2 dedicated server
+  command: "{{ srcds_root_dir }}/steamcmd.sh +login anonymous +force_install_dir {{ srcds_root_dir }}/tf2 +app_update 232250 +quit"
+  become_user: "{{ srcds_user }}"
+
+- name: Copy TF2 systemd unit
+  template:
+    src: templates/lib/systemd/system/tf2.service.j2
+    dest: /lib/systemd/system/tf2.service
+    owner: root
+    group: root
+    mode: 0600
+
+- name: Install prexec script
+  template:
+    src: templates/opt/srcds_preexec.sh.j2
+    dest: /opt/srcds_preexec.sh
+    owner: "{{ srcds_user }}"
+    group: "{{ srcds_user }}"
+    mode: 0600
+
+- name: Enable TF2 service
+  service:
+     name: tf2
+     enabled: yes
+
+- name: Create symlink for tf2
+  file:
+    src: "{{ srcds_root_dir }}/tf2/tf/"
+    dest: "/tf2"
+    owner: "{{ srcds_user }}"
+    group: "{{ srcds_user }}"
+    state: link
+
+- name: Install Sourcemod
+  include: sourcemod.yml
+  when: install_sourcemod
+
+- name: Install SourcePython
+  include: sourcepython.yml
+  when: install_sourcepython

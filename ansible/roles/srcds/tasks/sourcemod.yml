@@ -1,0 +1,12 @@
+---
+
+- name: Install SourceMod and Metamod
+  unarchive:
+    src: "{{ item }}"
+    dest: "{{ srcds_root_dir }}/tf2/tf/"
+    copy: no
+    owner: "{{ srcds_user }}"
+    group: "{{ srcds_user }}"
+  with_items:
+    - "{{ metamod_link }}"
+    - "{{ sourcemod_link }}"

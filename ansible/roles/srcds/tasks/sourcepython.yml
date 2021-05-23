@@ -1,0 +1,32 @@
+---
+
+- name: Install unzip
+  apt:
+    name: "{{ packages }}"
+    state: latest
+  vars:
+    packages:
+    - unzip
+    - python3-pip
+
+- name: Find Latest SourcePython build
+  shell: "curl --silent http://downloads.sourcepython.com/ | grep -iPo '(?<=href=\").*source-python-tf2.*.zip' | uniq"
+  register: sp
+  run_once: true
+
+- set_fact:
+    sourcepython_archive={{ sp.stdout }}
+
+- name: Install SourcePython
+  unarchive:
+    src: "http://downloads.sourcepython.com/{{ sourcepython_archive }}"
+    dest: "{{ srcds_root_dir }}/tf2/tf/"
+    copy: no
+    owner: "{{ srcds_user }}"
+    group: "{{ srcds_user }}"
+
+- name: Patch SP
+  replace:
+    path: "{{ srcds_root_dir }}/tf2/tf/addons/source-python/packages/source-python/filters/iterator.py"
+    regexp: 'if not self._filters\[filter_name\]\(item\):'
+    replace: 'if (filter_name not in self._filters or not self._filters[filter_name](item)):'

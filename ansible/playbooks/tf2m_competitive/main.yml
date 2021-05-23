@@ -1,0 +1,130 @@
+---
+- hosts: localhost
+  become: true
+  connection: local
+  gather_facts: no
+
+  vars:
+    srcds_root_dir: /usr/games/steam/
+    srcds_user: steam
+
+  roles:
+    # - role: firewall
+    #   allowed_ports:
+    #     - 27015/tcp
+    #     - 27015/udp
+    #     - 27020/tcp
+    #     - 27020/udp
+    - role: srcds
+      install_sourcemod: yes
+      install_sourcepython: yes
+    - role: security
+    - role: utils
+
+  tasks:
+    - name: Clone Connect Github repo
+      git:
+        repo: 'https://github.com/TF2Maps/SourcePython-Plugins.git'
+        dest: /tmp/sourcepython-plugins
+
+    - name: Install SP Plugins
+      shell:
+        cmd: |
+          PLUGIN_DIR="{{ srcds_root_dir }}/tf2/tf/addons/source-python/plugins/{{ item }}"
+          mkdir $PLUGIN_DIR
+          cp /tmp/sourcepython-plugins/{{ item }}/{{ item }}.py $PLUGIN_DIR/
+          cp /tmp/sourcepython-plugins/{{ item }}/info.ini $PLUGIN_DIR/
+          python3.8 -m pip install \
+            -t {{ srcds_root_dir }}/tf2/tf/addons/source-python/packages/custom \
+            -r /tmp/sourcepython-plugins/{{ item }}/REQUIREMENTS.txt"
+      with_items:
+        - admin
+        - connect
+        - reservation
+        # - logger
+        # - mapdl
+
+    - name: Create directories
+      file:
+        path: "{{ srcds_root_dir }}/tf2/tf/{{ item }}"
+        state: directory
+        owner: "{{ srcds_user }}"
+        group: "{{ srcds_user }}"
+      with_items:
+        - addons/sourcemod/
+        - custom/rgl_configs/
+        - custom/mapdl/maps/
+
+    - name: Install SM Plugins
+      copy:
+        src: files/tf2/addons/sourcemod/plugins/
+        dest: "{{ srcds_root_dir }}/tf2/tf/addons/sourcemod/plugins"
+        owner: "{{ srcds_user }}"
+        group: "{{ srcds_user }}"
+
+    - name: Install RGL Configs
+      copy:
+        src: files/tf2/custom/rgl_configs/cfg/
+        dest: "{{ srcds_root_dir }}/tf2/tf/custom/rgl_configs/cfg"
+        owner: "{{ srcds_user }}"
+        group: "{{ srcds_user }}"
+
+    - name: Install mapcycle
+      copy:
+        src: files/tf2/mapcycle.txt
+        dest: "{{ srcds_root_dir }}/tf2/tf/cfg/mapcycle.txt"
+        owner: "{{ srcds_user }}"
+        group: "{{ srcds_user }}"
+        mode: 0644
+
+    - name: Install Server config
+      copy:
+        src: files/tf2/server.cfg
+        dest: "{{ srcds_root_dir }}/tf2/tf/cfg/server.cfg"
+        owner: "{{ srcds_user }}"
+        group: "{{ srcds_user }}"
+        mode: 0600
+
+    - name: Install MOTD
+      copy:
+        src: files/tf2/motd_default.txt
+        dest: "{{ srcds_root_dir }}/tf2/tf/cfg/motd_default.txt"
+        owner: "{{ srcds_user }}"
+        group: "{{ srcds_user }}"
+        mode: 0600
+
+    - name: Add system aliases
+      lineinfile:
+        path: /etc/bash.bashrc
+        line: "{{ item }}"
+        create: yes
+      with_items:
+        - 'alias srcds="/usr/bin/tmux -S {{ srcds_root_dir }}/tf2/tmux.sock attach"'
+        - 'alias tags="jq -S . /opt/tags.json"'
+        - 'alias connect="echo \"connect $(curl --silent 169.254.169.254/latest/meta-data/public-ipv4); password $(cat /opt/tags.json | jq .server_password)\""'
+        - 'alias spinstall="python3.8 -m pip install -t {{ srcds_root_dir }}/tf2/tf/addons/source-python/packages/custom"'
+
+    - name: Add startup and shutdown scripts
+      copy:
+        src: "files/{{ item }}"
+        dest: "{{ item }}"
+        owner: "root"
+        group: "root"
+        mode: 0700
+      with_items:
+        - /opt/startup.py
+        - /opt/cron_shutdown.py
+
+    - name: Install cron_shutdown deps
+      shell: "/usr/bin/python3.8 -m pip install {{ item }}"
+      with_items:
+        - requests
+        - boto3
+        - discord
+        - vdf
+
+    - name: Cronjob for checking shutdown
+      cron:
+        name: cron_shutdown
+        minute: "*"
+        job: "/usr/bin/python3.8 /opt/cron_shutdown.py >> /var/log/cron_shutdown.log 2>&1"
