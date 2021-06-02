@@ -5,8 +5,8 @@ srcds_root_dir: /usr/games/steam/
 # https://www.sourcemm.net/downloads.php?branch=stable
 # https://www.sourcemod.net/downloads.php
 install_sourcemod: yes
-sourcemod_link: https://sm.alliedmods.net/smdrop/1.8/sourcemod-1.8.0-git6047-linux.tar.gz
-metamod_link:  https://mms.alliedmods.net/mmsdrop/1.10/mmsource-1.10.7-git961-linux.tar.gz
+sourcemod_link: https://sm.alliedmods.net/smdrop/1.10/sourcemod-1.10.0-git6502-linux.tar.gz
+metamod_link:  https://mms.alliedmods.net/mmsdrop/1.11/mmsource-1.11.0-git1144-linux.tar.gz
 
 install sourcepython: yes
 sourcepython_link: ""
