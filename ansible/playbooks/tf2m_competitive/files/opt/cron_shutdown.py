@@ -12,7 +12,7 @@ def main():
     with open("/opt/tags.json") as file:
         tags = json.load(file)
 
-    ttl = int(tags['ttl'] * 60)
+    ttl = int(tags['ttl']) * 60
     elapsed = int(time.time() - tags['launch_time'])
 
     # Check if server has been running for more than a day
