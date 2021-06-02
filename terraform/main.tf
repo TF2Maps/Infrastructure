@@ -94,3 +94,51 @@ module "gameservers-eu-central-1" {
     tf2m_site_connection_str = data.aws_ssm_parameter.tf2m_site_connection_str.value
     tf2m_bot_connection_str = data.aws_ssm_parameter.tf2m_bot_connection_str.value
 }
+
+# ----------------------
+# US West 1 - California
+# ----------------------
+provider "aws" {
+    alias = "us-west-1"
+    region = "us-west-1"
+}
+
+module "gameservers-us-west-1" {
+    source = "./gameservers"
+    providers = {
+        aws = aws.us-west-1
+    }
+
+    vpc_cidr = "10.13.0.0/16"
+
+    # Secrets
+    logstf_api_key = data.aws_ssm_parameter.logstf_api_key.value
+    demostf_api_key = data.aws_ssm_parameter.demostf_api_key.value
+    discord_api_key = data.aws_ssm_parameter.discord_api_key.value
+    tf2m_site_connection_str = data.aws_ssm_parameter.tf2m_site_connection_str.value
+    tf2m_bot_connection_str = data.aws_ssm_parameter.tf2m_bot_connection_str.value
+}
+
+# ----------------------
+# US West 2 - Oregon
+# ----------------------
+provider "aws" {
+    alias = "us-west-2"
+    region = "us-west-2"
+}
+
+module "gameservers-us-west-2" {
+    source = "./gameservers"
+    providers = {
+        aws = aws.us-west-2
+    }
+
+    vpc_cidr = "10.14.0.0/16"
+
+    # Secrets
+    logstf_api_key = data.aws_ssm_parameter.logstf_api_key.value
+    demostf_api_key = data.aws_ssm_parameter.demostf_api_key.value
+    discord_api_key = data.aws_ssm_parameter.discord_api_key.value
+    tf2m_site_connection_str = data.aws_ssm_parameter.tf2m_site_connection_str.value
+    tf2m_bot_connection_str = data.aws_ssm_parameter.tf2m_bot_connection_str.value
+}
